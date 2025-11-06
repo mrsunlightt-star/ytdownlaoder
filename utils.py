@@ -129,3 +129,32 @@ def read_text_file(file_path: Path) -> str:
     """
     with open(file_path, 'r', encoding='utf-8') as f:
         return f.read()
+
+def update_yt_dlp() -> str:
+    """
+    检查并更新 yt-dlp。
+    返回一个表示操作结果的字符串（中文）。
+    """
+    try:
+        # 使用 -U 选项来更新 yt-dlp
+        result = subprocess.run(
+            [sys.executable, '-m', 'yt_dlp', '-U'],
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding='utf-8'
+        )
+        output = result.stdout.strip()
+        if "is up to date" in output:
+            return "yt-dlp 已是最新版本。"
+        elif "Updating to" in output:
+            return f"yt-dlp 已成功更新到最新版本。"
+        else:
+            return "yt-dlp 更新检查完成，未识别到明确状态。"
+    except subprocess.CalledProcessError as e:
+        error_message = e.stderr.strip()
+        return f"更新 yt-dlp 失败: {error_message}"
+    except FileNotFoundError:
+        return "未找到 yt-dlp，请确保它已安装在当前 Python 环境中。"
+    except Exception as e:
+        return f"检查 yt-dlp 更新时发生未知错误: {e}"

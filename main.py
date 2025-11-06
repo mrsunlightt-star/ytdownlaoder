@@ -2,6 +2,7 @@ import sys
 import os
 from pathlib import Path
 import queue
+import threading
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QTextEdit, QComboBox, QFileDialog, QMessageBox
@@ -9,7 +10,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal, QThread
 
 from downloader import YtDlpDownloader
-from utils import get_default_download_dir, sanitize_path, load_cookies_from_file, get_chrome_cookies_macos, get_os_type
+from utils import get_default_download_dir, sanitize_path, load_cookies_from_file, get_chrome_cookies_macos, get_os_type, update_yt_dlp
 
 class LogThread(QThread):
     log_signal = Signal(str)
@@ -42,6 +43,7 @@ class YouTubeDownloaderApp(QWidget):
 
         self.init_ui()
         self.load_settings()
+        self.check_for_updates()
 
     def init_ui(self):
         self.setWindowTitle("YouTube Downloader")
@@ -110,6 +112,16 @@ class YouTubeDownloaderApp(QWidget):
         main_layout.addWidget(self.log_output)
 
         self.setLayout(main_layout)
+
+    def check_for_updates(self):
+        self.log_queue.put("正在检查 yt-dlp 更新...")
+        update_thread = threading.Thread(target=self._run_update_check)
+        update_thread.daemon = True
+        update_thread.start()
+
+    def _run_update_check(self):
+        update_message = update_yt_dlp()
+        self.log_queue.put(update_message)
 
     def load_settings(self):
         # Load previously saved settings if any
